@@ -1,6 +1,8 @@
 // app_20230504.js 파일에서 코드 개선하기(DOM API 최소화 하기) / api 호출 코드 간결화 하기 = 리팩토링
 //DOM API = document.createElement('~~~~')
 // app_20230504.js  api 호츌 코드 [7~8 줄 21~22 줄 간결화] getData()
+// app_20230508.js 읽음/ 읽지 않음 상태 추가
+//
 
 // let const const(상수)는 변수에 넣은 데이터를 바꿀 수 없다.
 const ajax = new XMLHttpRequest();
@@ -12,6 +14,7 @@ const container = document.querySelector('#root')
 // 공유되는 값
 const store = {
   currentPage: 1,
+  feeds: [],
 };
 
 function getData(url){
@@ -21,8 +24,17 @@ function getData(url){
   return JSON.parse(ajax.response) // json 파일 객체화
 }
 
+function makeFeeds(feeds){
+  for(let i = 0; i < feeds.length; i++){
+    feeds[i].read = false;
+
+    return feeds
+  }
+}
+
+
 function newsFeed(){
-  let newsFeed = getData(NEWS_URL);
+  let newsFeed = store.feeds;
   const newsList = []
   // template을 사용함으로써 마크업 구조를 정확하게 알 수 있다.
   //  {{__news_feed__}} 와 같은 마킹을 함으로써 어떤 데이터들이 들어가는지 명확하게 알 수 있어 분리를 한다.
@@ -50,6 +62,12 @@ function newsFeed(){
       </div>
     </div>
   `
+
+  // getData를 한번만 불러옴
+  if(newsFeed.length === 0){
+    newsFeed = store.feeds = makeFeeds(getData(NEWS_URL))
+  }
+
 
   for(let i = (store.currentPage - 1) * 10; i <  (store.currentPage) * 10; i++){
     newsList.push(`
@@ -116,15 +134,33 @@ function newsDetail(){
     </div>
   `;
 
-  container.innerHTML = template
+  for(let i = 0; i < store.feeds.length; i++){
+    if(store.feeds[i].id === Number(id)){
+      store.feeds[i].read = true;
+      break;
+    }
+  }
 
-
-//   container.innerHTML = `
-//   <h1>${newsContent.title}</h1>
-//   <div>
-//   <a href="#/page/${store.currentPage}">목록으로</a>
-//   </div>
-//   `
+  function makeComment(comments, called = 0){
+    const commentString = []
+    for(let i = 0; i < comments.length; i++) {
+      commentString.push(`
+        <div style="padding-left: ${called * 40}px;" class="mt-4">
+          <div class="text-gray-400">
+            <i class="fa fa-sort-up mr-2"></i>
+            <strong>${comments[i].user}</strong> ${comments[i].time_ago}
+          </div>
+          <p class="text-gray-700">${comments[i].content}</p>
+        </div>
+      `);
+      // 끝을 알 수 없는 경우 재귀 함수 사용
+      if(comments[i].comments.length > 0){
+        commentString.push(makeComment(comments[i].comments, called + 1))
+      }
+    }
+    return commentString.join('');
+  }
+  container.innerHTML = template.replace('{{__comments__}}', makeComment(newsContent.comments));
 }
 
 function router(){
