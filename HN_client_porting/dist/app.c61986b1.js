@@ -120,6 +120,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 })({"app.ts":[function(require,module,exports) {
 "use strict";
 
+// javascript HN_client app.js => ts 파일로 porting
 // 변수의 타입을 명시해줘야함 프리미티브 타입/ 객체타입
 // 프리미티브 타입 - 문자열, 숫자, boolean, null, undefined
 var container = document.getElementById('root');
