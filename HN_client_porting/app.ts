@@ -45,6 +45,38 @@ const store:Store = {
   feeds: [],
 };
 
+class Api {
+  url: string;
+  ajax: XMLHttpRequest;
+
+  // constructor 생성자
+  constructor(url: string){
+    this.url = url;
+    this.ajax = new XMLHttpRequest();
+  }
+
+  protected getRequest<AjaxResponse>(): AjaxResponse {
+    this.ajax.open('GET', this.url, false);
+    this.ajax.send(); //데이터 들어옴
+
+    return JSON.parse(ajax.response)
+  }
+
+}
+
+class NewsFeedApi extends Api {
+  getData() : NewsFeed[] {
+    return this.getRequest<NewsFeed[]>();
+  }
+}
+
+class NewsDetaildApi extends Api {
+  getData() : NewsDetail {
+    return this.getRequest<NewsDetail>();
+  }
+}
+
+
 function getData<AjaxResponse>(url:string): AjaxResponse {
   ajax.open('GET', url, false);
   ajax.send(); //데이터 들어옴
@@ -69,6 +101,7 @@ function updateView(html:string): void{
 
 
 function newsFeed(): void{
+  const api = new NewsFeedApi(NEWS_URL);
   let newsFeed:NewsFeed[] = store.feeds;
   const newsList = []
   // template을 사용함으로써 마크업 구조를 정확하게 알 수 있다.
@@ -100,7 +133,7 @@ function newsFeed(): void{
 
   // getData를 한번만 불러옴
   if(newsFeed.length === 0){
-    newsFeed = store.feeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL))
+    newsFeed = store.feeds = makeFeeds(api.getData())
   }
 
 
