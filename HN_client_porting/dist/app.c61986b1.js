@@ -121,26 +121,6 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 "use strict";
 
 // javascript HN_client app.js => ts 파일로 porting
-var __extends = this && this.__extends || function () {
-  var _extendStatics = function extendStatics(d, b) {
-    _extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-    };
-    return _extendStatics(d, b);
-  };
-  return function (d, b) {
-    if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-    _extendStatics(d, b);
-    function __() {
-      this.constructor = d;
-    }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
 // 변수의 타입을 명시해줘야함 프리미티브 타입/ 객체타입
 // 프리미티브 타입 - 문자열, 숫자, boolean, null, undefined
 var container = document.getElementById('root');
@@ -153,45 +133,44 @@ var store = {
   currentPage: 1,
   feeds: []
 };
+function applyApiMixins(targetClass, baseClasses) {
+  baseClasses.forEach(function (baseClass) {
+    Object.getOwnPropertyNames(baseClass.prototype).forEach(function (name) {
+      var descriptor = Object.getOwnPropertyDescriptor(baseClass.prototype, name);
+      if (descriptor) {
+        Object.defineProperty(targetClass.prototype, name, descriptor);
+      }
+    });
+  });
+}
 var Api = /** @class */function () {
-  // constructor 생성자
-  function Api(url) {
-    this.url = url;
-    this.ajax = new XMLHttpRequest();
-  }
-  Api.prototype.getRequest = function () {
-    this.ajax.open('GET', this.url, false);
-    this.ajax.send(); //데이터 들어옴
+  function Api() {}
+  Api.prototype.getRequest = function (url) {
+    var ajax = new XMLHttpRequest();
+    ajax.open('GET', url, false);
+    ajax.send(); //데이터 들어옴
     return JSON.parse(ajax.response);
   };
   return Api;
 }();
-var NewsFeedApi = /** @class */function (_super) {
-  __extends(NewsFeedApi, _super);
-  function NewsFeedApi() {
-    return _super !== null && _super.apply(this, arguments) || this;
-  }
+var NewsFeedApi = /** @class */function () {
+  function NewsFeedApi() {}
   NewsFeedApi.prototype.getData = function () {
-    return this.getRequest();
+    return this.getRequest(NEWS_URL);
   };
   return NewsFeedApi;
-}(Api);
-var NewsDetaildApi = /** @class */function (_super) {
-  __extends(NewsDetaildApi, _super);
-  function NewsDetaildApi() {
-    return _super !== null && _super.apply(this, arguments) || this;
-  }
-  NewsDetaildApi.prototype.getData = function () {
-    return this.getRequest();
+}();
+var NewsDetailApi = /** @class */function () {
+  function NewsDetailApi() {}
+  NewsDetailApi.prototype.getData = function (id) {
+    return this.getRequest(CONTENT_URL.replace('@id', id));
   };
-  return NewsDetaildApi;
-}(Api);
-function getData(url) {
-  ajax.open('GET', url, false);
-  ajax.send(); //데이터 들어옴
-  return JSON.parse(ajax.response); // json 파일 객체화
-}
-
+  return NewsDetailApi;
+}();
+;
+;
+applyApiMixins(NewsFeedApi, [Api]);
+applyApiMixins(NewsDetailApi, [Api]);
 function makeFeeds(feeds) {
   for (var i = 0; i < feeds.length; i++) {
     feeds[i].read = false;
@@ -206,7 +185,7 @@ function updateView(html) {
   }
 }
 function newsFeed() {
-  var api = new NewsFeedApi(NEWS_URL);
+  var api = new NewsFeedApi();
   var newsFeed = store.feeds;
   var newsList = [];
   // template을 사용함으로써 마크업 구조를 정확하게 알 수 있다.
@@ -228,16 +207,17 @@ function newsDetail() {
   // hashchange => URL #부분이 변경되면 이벤트가 시작됩니다.
   //location => location 객체는 브라우저가 기본으로 제공해주는 객체로 주소와 관련된 다양한 정보를 제공해 준다.
   //substring => 쓰고 싶은 index값 부터 뒤에 있는 문자열을 return 해준다. (필요없는 문자열 제거)
-  var id = location.hash.substring(7); // #제거
-  var newsContent = getData(CONTENT_URL.replace('@id', id));
-  var template = "\n    <div class=\"bg-gray-600 min-h-screen pb-8\">\n      <div class=\"bg-white text-xl\">\n        <div class=\"mx-auto px-4\">\n          <div class=\"flex justify-between items-center py-6\">\n            <div class=\"flex justify-start\">\n              <h1 class=\"font-extrabold\">Hacker News</h1>\n            </div>\n            <div class=\"items-center justify-end\">\n              <a href=\"#/page/".concat(store.currentPage, "\" class=\"text-gray-500\">\n                <i class=\"fa fa-times\"></i>\n              </a>\n            </div>\n          </div>\n        </div>\n      </div>\n\n      <div class=\"h-full border rounded-xl bg-white m-6 p-4 \">\n        <h2>").concat(newsContent.title, "</h2>\n        <div class=\"text-gray-400 h-20\">\n          ").concat(newsContent.content, "\n        </div>\n\n        {{__comments__}}\n\n      </div>\n    </div>\n  ");
+  var id = location.hash.substr(7);
+  var api = new NewsDetailApi();
+  var newsDetail = api.getData(id);
+  var template = "\n    <div class=\"bg-gray-600 min-h-screen pb-8\">\n      <div class=\"bg-white text-xl\">\n        <div class=\"mx-auto px-4\">\n          <div class=\"flex justify-between items-center py-6\">\n            <div class=\"flex justify-start\">\n              <h1 class=\"font-extrabold\">Hacker News</h1>\n            </div>\n            <div class=\"items-center justify-end\">\n              <a href=\"#/page/".concat(store.currentPage, "\" class=\"text-gray-500\">\n                <i class=\"fa fa-times\"></i>\n              </a>\n            </div>\n          </div>\n        </div>\n      </div>\n\n      <div class=\"h-full border rounded-xl bg-white m-6 p-4 \">\n        <h2>").concat(newsDetail.title, "</h2>\n        <div class=\"text-gray-400 h-20\">\n          ").concat(newsDetail.content, "\n        </div>\n\n        {{__comments__}}\n\n      </div>\n    </div>\n  ");
   for (var i = 0; i < store.feeds.length; i++) {
     if (store.feeds[i].id === Number(id)) {
       store.feeds[i].read = true;
       break;
     }
   }
-  updateView(template.replace('{{__comments__}}', makeComment(newsContent.comments)));
+  updateView(template.replace('{{__comments__}}', makeComment(newsDetail.comments)));
 }
 function makeComment(comments) {
   var commentString = [];

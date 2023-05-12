@@ -45,44 +45,47 @@ const store:Store = {
   feeds: [],
 };
 
+function applyApiMixins(targetClass: any, baseClasses: any[]): void {
+  baseClasses.forEach(baseClass => {
+    Object.getOwnPropertyNames(baseClass.prototype).forEach(name => {
+      const descriptor = Object.getOwnPropertyDescriptor(baseClass.prototype, name);
+
+      if (descriptor) {
+        Object.defineProperty(targetClass.prototype, name, descriptor);
+      }
+    });
+  });
+}
+
+
 class Api {
-  url: string;
-  ajax: XMLHttpRequest;
-
-  // constructor 생성자
-  constructor(url: string){
-    this.url = url;
-    this.ajax = new XMLHttpRequest();
-  }
-
-  protected getRequest<AjaxResponse>(): AjaxResponse {
-    this.ajax.open('GET', this.url, false);
-    this.ajax.send(); //데이터 들어옴
+  getRequest<AjaxResponse>(url: string): AjaxResponse {
+    const ajax = new XMLHttpRequest();
+    ajax.open('GET', url, false);
+    ajax.send(); //데이터 들어옴
 
     return JSON.parse(ajax.response)
   }
 
 }
 
-class NewsFeedApi extends Api {
+class NewsFeedApi {
   getData() : NewsFeed[] {
-    return this.getRequest<NewsFeed[]>();
+    return this.getRequest<NewsFeed[]>(NEWS_URL);
   }
 }
 
-class NewsDetaildApi extends Api {
-  getData() : NewsDetail {
-    return this.getRequest<NewsDetail>();
+class NewsDetailApi {
+  getData(id: string) : NewsDetail {
+    return this.getRequest<NewsDetail>(CONTENT_URL.replace('@id', id));
   }
 }
 
+interface NewsFeedApi extends Api {};
+interface NewsDetailApi extends Api {};
 
-function getData<AjaxResponse>(url:string): AjaxResponse {
-  ajax.open('GET', url, false);
-  ajax.send(); //데이터 들어옴
-
-  return JSON.parse(ajax.response) // json 파일 객체화
-}
+applyApiMixins(NewsFeedApi, [Api])
+applyApiMixins(NewsDetailApi, [Api])
 
 function makeFeeds(feeds:NewsFeed[]):NewsFeed[]{
   for(let i = 0; i < feeds.length; i++){
@@ -101,7 +104,7 @@ function updateView(html:string): void{
 
 
 function newsFeed(): void{
-  const api = new NewsFeedApi(NEWS_URL);
+  const api = new NewsFeedApi();
   let newsFeed:NewsFeed[] = store.feeds;
   const newsList = []
   // template을 사용함으로써 마크업 구조를 정확하게 알 수 있다.
@@ -170,10 +173,10 @@ function newsDetail(): void{
   // hashchange => URL #부분이 변경되면 이벤트가 시작됩니다.
   //location => location 객체는 브라우저가 기본으로 제공해주는 객체로 주소와 관련된 다양한 정보를 제공해 준다.
   //substring => 쓰고 싶은 index값 부터 뒤에 있는 문자열을 return 해준다. (필요없는 문자열 제거)
-  const id = location.hash.substring(7) // #제거
-  const newsContent = getData<NewsDetail>(CONTENT_URL.replace('@id', id))
-
-   let template = `
+  const id = location.hash.substr(7);
+  const api = new NewsDetailApi();
+  const newsDetail: NewsDetail = api.getData(id);
+  let template = `
     <div class="bg-gray-600 min-h-screen pb-8">
       <div class="bg-white text-xl">
         <div class="mx-auto px-4">
@@ -191,9 +194,9 @@ function newsDetail(): void{
       </div>
 
       <div class="h-full border rounded-xl bg-white m-6 p-4 ">
-        <h2>${newsContent.title}</h2>
+        <h2>${newsDetail.title}</h2>
         <div class="text-gray-400 h-20">
-          ${newsContent.content}
+          ${newsDetail.content}
         </div>
 
         {{__comments__}}
@@ -209,7 +212,7 @@ function newsDetail(): void{
     }
   }
 
-  updateView(template.replace('{{__comments__}}', makeComment(newsContent.comments)));
+  updateView(template.replace('{{__comments__}}', makeComment(newsDetail.comments)));
 }
 
 
