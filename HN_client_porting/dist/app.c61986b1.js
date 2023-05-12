@@ -162,7 +162,7 @@ var Api = /** @class */function () {
   Api.prototype.getRequest = function () {
     this.ajax.open('GET', this.url, false);
     this.ajax.send(); //데이터 들어옴
-    return JSON.parse(this.ajax.response);
+    return JSON.parse(ajax.response);
   };
   return Api;
 }();
