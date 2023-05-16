@@ -121,6 +121,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 "use strict";
 
 // javascript HN_client app.js => ts 파일로 porting
+//기존 app.ts 파일 분리 / 모듈 & 캡슐화
 var __extends = this && this.__extends || function () {
   var _extendStatics = function extendStatics(d, b) {
     _extendStatics = Object.setPrototypeOf || {
@@ -383,7 +384,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60300" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61946" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];
