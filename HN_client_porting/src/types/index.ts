@@ -1,9 +1,16 @@
 import View from '../core/view';
 
 //TypeScript - interface 인터페이스
-export interface Store {
-  feeds: NewsFeed[];
+export interface NewsStore {
+  getAllFeeds: () => NewsFeed[];
+  getFeed: (positioon: number) => NewsFeed;
+  setFeeds: (feeds: NewsFeed[]) => void;
+  makeRead: (id: number) => void;
+  hasFeeds: boolean;
   currentPage: number;
+  numberOfFeed:number;
+  nextPage: number;
+  prevPage: number;
 }
 
 // 중복되는 타입 하나로 결합
@@ -34,4 +41,5 @@ export interface NewsComment extends News {
 export interface RouteInfo {
   path: string;
   page: View;
+  params: RegExp | null;
 }
