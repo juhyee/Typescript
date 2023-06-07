@@ -4,7 +4,7 @@
 
 type MyObject = {
   name?: string,
-  readonly age: number,
+  age: number,
   getFamilyName: () => string,
   getLastName: () => string,
   getBloodType: () => string,
